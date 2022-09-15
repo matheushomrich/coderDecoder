@@ -1,31 +1,205 @@
 import sys
 
+# functions to support code
 def hexToBin(input):
-    return bin(int(input, 16)).zfill(8)
+    return bin(int(input, base = 16))[2:].zfill(16)
 
 def binToHex(input):
     return hex(int(input, 2))[2:]
 
+def loadMap(csv, toggle):
+    result = {}
+
+    try:
+        file = open(csv, 'r')
+
+        for line in file:
+            print(line)
+            infos = line.split(",")
+            if not toggle:
+                #codificacao
+                result[infos[0]] = infos[1][:-1]
+            else:
+                #decodificacao
+                result[infos[1][:-1]] = infos[0]
+
+        return result
+
+
+    except:
+        print('error')
+
+def invert(inputBin):
+    result = ""
+
+    for i in range(0, len(inputBin)):
+        if inputBin[i] == '-':
+            result += '+'
+        elif inputBin[i] == '+':
+            result += '-'
+        else:
+            result += '0'
+    
+
+# techniques
 def codNRZI(input):
-    print(binToHex(input))
+
+    binInput = str(hexToBin(input))
+
+    currentSignal = "-"
+    codedSignal = ""
+
+    for i in range(0, len(binInput)):
+        if binInput[i] == '1':
+            if currentSignal == '-':
+                currentSignal = '+'
+            else:
+                currentSignal = '-'
+        codedSignal += currentSignal
+    
+    return codedSignal
 
 def decodNRZI(input):
-    print("nrzi")
+
+    currentSignal = "-"
+    decodedSignal = ""
+
+    for i in range(0, len(input)):
+        if input[i] != currentSignal:
+            decodedSignal += '1'
+            if currentSignal == '-':
+                currentSignal = '+'
+            else:
+                currentSignal = '-'
+        else:
+            decodedSignal += '0'
+
+    return binToHex(decodedSignal)
 
 def codMan(input):
-    print("manCoder")
+    
+    binInput = str(hexToBin(input))
+
+    currentSignal = "-"
+
+    nextSignals = ""
+    codedSignal = ""
+
+    for i in range(0, len(binInput)):
+        if binInput[i] == '0':
+            if currentSignal == '-':
+                nextSignals = '+-'
+                currentSignal = '-'
+            else:
+                nextSignals = '-+'
+                currentSignal = '+'
+        elif currentSignal == '-':
+            nextSignals = '-+'
+            currentSignal = '+'
+        else:
+            nextSignals = '+-'
+            currentSignal = '-'
+        codedSignal += nextSignals
+
+    return codedSignal
 
 def decodMan(input):
-    print("manDecoder")
+    previousSignal = '-'
+    decodedSignal = ""
+    signalA = ''
+    signalB = ''
 
+    for i in range(0, len(input), 2):
+        signalA = input[i]
+        signalB = input[i + 1]
+
+        if signalA == signalB:
+            return "Error"
+        
+        if previousSignal == '-':
+            if signalA == '+':
+                decodedSignal += '0'
+            else:
+                decodedSignal += '1'
+        else:
+            if signalA == '+':
+                decodedSignal += '1'
+            else:
+                decodedSignal += '0'
+        previousSignal = signalB
+    
+    return binToHex(decodedSignal)
+
+#TODO not tested yet
 def cod8b6t(input):
-    print("8b6t")
+    map = loadMap("8b6t.csv", False)
+    inputBin = hexToBin(input)
+    codedSignal = ""
+    aux = 0
+
+    countPositiveTotal = 0
+    countNegativeTotal = 0
+
+    for i in range(8, len(inputBin), 8):
+        substring = inputBin[aux:i]
+        codedSubstring = map.get(substring)
+
+        countPosSubs = 0
+        countNegSubs = 0
+
+        for j in range(0, 5):
+            if codedSubstring[j] == '-':
+                countNegSubs += 1
+            elif codedSubstring[j] == '+': 
+                countPosSubs += 1
+        
+        if not countPositiveTotal == countNegativeTotal:
+            normal = abs((countPositiveTotal + countPosSubs) - (countNegativeTotal + countNegSubs))
+            inverted = abs((countPositiveTotal + countNegSubs) - (countNegativeTotal + countPosSubs))
+
+            if inverted < normal:
+                codedSubstring = invert(codedSubstring)
+                a = countPosSubs
+                countPosSubs = countNegSubs
+                countNegSubs = a
+
+        codedSignal += codedSubstring
+        countNegativeTotal += countNegSubs
+        countPositiveTotal += countPosSubs
+        aux = i
+
+    return codedSignal
 
 def decod8b6t(input):
     print("8b6t")
 
+#TODO fix bug
 def cod6b8b(input):
-    print("6b8b")
+    binInput = str(hexToBin(input))
+    codedSginal = ""
+    aux = 0
+
+    for i in range(6, len(binInput), 6):
+        subs = binInput[aux:i] 
+        positiveCounter = 0
+        negativeCounter = 0
+        disp = 0
+
+        for j in range(0, 6):
+            if subs[j] == '0':
+                negativeCounter += 1
+            else:
+                positiveCounter += 1
+            
+        disp = positiveCounter - negativeCounter
+        if disp == 0:
+            codedSginal += "10" + subs
+        if disp == 2:
+            codedSginal += "00" + subs
+        if disp == -2:
+            codedSginal += "11" + subs
+        aux = i
+    return codNRZI(binToHex(codedSginal))
 
 def decod6b8b(input):
     print("6b8b")   
@@ -40,28 +214,28 @@ def main():
     if len(sys.argv) == 4:
         if sys.argv[1] == "codificador":
             if sys.argv[2] == "nrzi":
-                codNRZI(sys.argv[3])
+                print(codNRZI(sys.argv[3]))
             elif sys.argv[2] == "mdif":
-                codMan(sys.argv[3])
+                print(codMan(sys.argv[3]))
             elif sys.argv[2] == "8b6t":
-                cod8b6t(sys.argv[3])
+                print(cod8b6t(sys.argv[3]))
             elif sys.argv[2] == "6b8b":
-                cod6b8b(sys.argv[3])
+                print(cod6b8b(sys.argv[3]))
             elif sys.argv[2] == "hdb3":
-                codhdb3(sys.argv[3])
+                print(codhdb3(sys.argv[3]))
             else:
                 print("Error: coder input not valid")              
         elif sys.argv[1] == "decodificador":
             if sys.argv[2] == "nrzi":
-                decodNRZI(sys.argv[3])
+                print(decodNRZI(sys.argv[3]))
             elif sys.argv[2] == "mdif":
-                decodMan(sys.argv[3])
+                print(decodMan(sys.argv[3]))
             elif sys.argv[2] == "8b6t":
-                decod8b6t(sys.argv[3])
+                print(decod8b6t(sys.argv[3]))
             elif sys.argv[2] == "6b8b":
-                decod6b8b(sys.argv[3])
+                print(decod6b8b(sys.argv[3]))
             elif sys.argv[2] == "hdb3":
-                decodhdb3(sys.argv[3])
+                print(decodhdb3(sys.argv[3]))
             else:
                 print("Error: decoder input not valid") 
     else:
