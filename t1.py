@@ -170,8 +170,31 @@ def cod8b6t(input):
 
     return codedSignal
 
+
+# TODO not tested
 def decod8b6t(input):
-    print("8b6t")
+
+    map = loadMap("8b6t.csv", True)
+    decodedString = ""
+
+    if not len(input) % 6 == 0:
+        return "error"
+    
+    for i in range(6, len(input), 6):
+        substring = input[aux:i]
+        decodedSubstring = map.get(substring)
+
+        if decodedSubstring == None:
+            substring = invert(substring)
+            decodedSubstring = map.get(substring)
+            if decodedSubstring == None:
+                return "error"
+        
+        decodedString += decodedSubstring
+        aux = i
+
+    return binToHex(decodedString)
+
 
 #TODO fix bug
 def cod6b8b(input):
@@ -204,8 +227,59 @@ def cod6b8b(input):
 def decod6b8b(input):
     print("6b8b")   
 
+# TODO not tested
 def codhdb3(input):
-    print("hdb3")
+    inputBin = hexToBin(input)
+
+    currentViolation = '+'
+    currentInfo = '+'
+    violation = 0
+
+    flag = False
+
+    codedSignal = ""
+
+    for i in range(0, len(inputBin)):
+        if inputBin[i] == '0':
+            violation = 1
+
+            if not (i + 3) >= len(inputBin):
+                for j in range(1, 3):
+                    if inputBin[i + j] == '0':
+                        violation += 1
+                    else:
+                        break
+            
+            if violation == 4:
+                if currentInfo == currentViolation or (not currentInfo == currentViolation and flag):
+                    codedSignal += currentViolation + "00" + currentViolation
+                else:
+                    codedSignal += "000" + currentViolation
+                
+                if currentViolation == '+':
+                    currentViolation = '-'
+                else:
+                    currentViolation = '+'
+
+                flag = True
+
+                i += violation - 1
+                violation = 0
+            else:
+                i += violation - 1
+                violation -= 1
+        else:
+            codedSignal += currentInfo
+
+            if currentInfo == '+':
+                currentInfo = '-'
+            else:
+                currentInfo = '+'
+
+            flag = True
+
+    return codedSignal
+
 
 def decodhdb3(input):
     print("hdb3")
