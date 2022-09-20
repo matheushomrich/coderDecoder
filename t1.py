@@ -1,3 +1,5 @@
+from signal import signal
+from symbol import subscript
 import sys
 
 # functions to support code
@@ -224,8 +226,29 @@ def cod6b8b(input):
         aux = i
     return codNRZI(binToHex(codedSginal))
 
+# TODO not tested
 def decod6b8b(input):
-    print("6b8b")   
+    inputBin = decodNRZI(input)
+    inputBin = hexToBin(inputBin)
+
+    decodedString = ""
+    aux = 0
+
+    if not len(inputBin) % 8 == 0:
+        return "Erro"
+    for i in range(8, len(inputBin), 8):
+        subString = inputBin[aux:i]
+        countPositive = 0
+        countNegative = 0
+        for j in range(7):
+            if subString[j] == '+':
+                countPositive += 1
+            else:
+                countNegative += 1
+        decodedString += subString[2:8]
+        aux = i
+    
+    return binToHex(decodedString)
 
 # TODO not tested
 def codhdb3(input):
@@ -281,8 +304,45 @@ def codhdb3(input):
     return codedSignal
 
 
+# TODO not tested 
 def decodhdb3(input):
-    print("hdb3")
+    
+    decodedString = ""
+    lastInFBit = '0'
+    zeroSequence = 0
+    violation = False
+
+    for i in range(0, len(input)):
+        if input[i] == '0':
+            decodedString += '0'
+            zeroSequence += 1
+        elif violation or (lastInFBit == input[i] and zeroSequence == 3):
+            decodedString += '0'
+            violation = False
+            zeroSequence = 0
+        else:
+            signal = True
+            if len(input) > i + 3:
+                for j in range(2):
+                    if not input[i + j] == '0':
+                        signal = False
+                        break
+                if not input[i + 3] == input[i]:
+                    signal = False
+            else:
+                signal = False
+            if signal:
+                decodedString += '0'
+                violation = True
+            else:
+                if input[i] == lastInFBit:
+                    return "Erro"
+                decodedString += '1'
+            zeroSequence = 0
+    
+    return binToHex(decodedString)
+
+
 
 def main():
     if len(sys.argv) == 4:
