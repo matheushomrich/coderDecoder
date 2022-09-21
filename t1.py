@@ -1,5 +1,3 @@
-from signal import signal
-from symbol import subscript
 import sys
 
 # functions to support code
@@ -16,7 +14,6 @@ def loadMap(csv, toggle):
         file = open(csv, 'r')
 
         for line in file:
-            print(line)
             infos = line.split(",")
             if not toggle:
                 #codificacao
@@ -132,7 +129,7 @@ def decodMan(input):
     
     return binToHex(decodedSignal)
 
-#TODO not tested yet
+#BUG falta digitos no final
 def cod8b6t(input):
     map = loadMap("8b6t.csv", False)
     inputBin = hexToBin(input)
@@ -149,7 +146,7 @@ def cod8b6t(input):
         countPosSubs = 0
         countNegSubs = 0
 
-        for j in range(0, 5):
+        for j in range(5):
             if codedSubstring[j] == '-':
                 countNegSubs += 1
             elif codedSubstring[j] == '+': 
@@ -173,11 +170,12 @@ def cod8b6t(input):
     return codedSignal
 
 
-# TODO not tested
+# BUG falta 2 digitos no final 
 def decod8b6t(input):
 
     map = loadMap("8b6t.csv", True)
     decodedString = ""
+    aux = 0
 
     if not len(input) % 6 == 0:
         return "error"
@@ -198,7 +196,7 @@ def decod8b6t(input):
     return binToHex(decodedString)
 
 
-#TODO fix bug
+#BUG faltam digitos
 def cod6b8b(input):
     binInput = str(hexToBin(input))
     codedSginal = ""
@@ -226,7 +224,7 @@ def cod6b8b(input):
         aux = i
     return codNRZI(binToHex(codedSginal))
 
-# TODO not tested
+# BUG resultado aleatorio F
 def decod6b8b(input):
     inputBin = decodNRZI(input)
     inputBin = hexToBin(inputBin)
@@ -250,7 +248,7 @@ def decod6b8b(input):
     
     return binToHex(decodedString)
 
-# TODO not tested
+# BUG so imprime +-+-+-+-+
 def codhdb3(input):
     inputBin = hexToBin(input)
 
